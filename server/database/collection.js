@@ -1,4 +1,5 @@
 const Collections = {
-    USER: 'user'
+    USER: 'user',
+    POSTS: 'posts'
 }
 export default Collections;

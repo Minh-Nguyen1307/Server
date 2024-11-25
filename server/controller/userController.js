@@ -2,12 +2,13 @@
 import UserModel from '../model/userModel.js';
 import bcrypt from 'bcryptjs';
 import jwt from "jsonwebtoken";
+import crypto from 'crypto';
 
-// Register
+
 
 export const createUser = async (req, res, next) => {
   try {
-    const { userName, email, password, role } = req.body;
+    const { userName, email, password} = req.body;
     
     if (!userName || !email || !password) {
       return res.status(400).json({ message: 'All fields are required' });
@@ -25,8 +26,7 @@ export const createUser = async (req, res, next) => {
     const createdUser = await UserModel.create({
       userName,
       email,
-      password: hashedPassword,
-      role
+      password: hashedPassword
     });
 
     res.status(201).json({
@@ -40,6 +40,10 @@ export const createUser = async (req, res, next) => {
 };
 
 // Login
+  const generateApiKey = (userId, email) => {
+  const randomString = crypto.randomBytes(8).toString("hex");
+  return `mern-${userId}-${email}-${randomString}`;
+};
 export const loginUser = async (req, res, next) => {
     try {
         const { email, password } = req.body;
@@ -53,49 +57,30 @@ export const loginUser = async (req, res, next) => {
             throw new Error("Invalid email or password!");
         }
 
-        // Check password
+       
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             throw new Error("Invalid email or password!");
         }
 
-        // Generate token
         const token = jwt.sign(
             { id: user._id, role: user.role },
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
         );
+        const apiKey = generateApiKey(user._id, user.email);
 
         res.status(200).send({
             message: "Login successful!",
             token,
+            apiKey,
             user: { id: user._id, userName: user.userName, email: user.email },
             success: true,
         });
+        user.apiKey = apiKey;
+await user.save();
     } catch (error) {
         next(error);
     }
 };
 
-
-export const getAllUsers = async (req, res, next) => {
-    try {
-        
-        if (req.user.role !== "admin") {
-            return res.status(403).send({
-                message: "Access denied. Only admins can perform this action.",
-                success: false,
-            });
-        }
-
-        
-        const users = await UserModel.find({}, "-password"); 
-        res.status(200).send({
-            message: "Fetched all users successfully.",
-            data: users,
-            success: true,
-        });
-    } catch (error) {
-        next(error);
-    }
-};

@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import userRoutes from './routes/userRoutes.js';
 import dotenv from 'dotenv';
-
+import postRoutes from './routes/postRoutes.js'
 dotenv.config();
 
 
@@ -18,6 +18,7 @@ app.use(express.json());
 
 
 app.use('/api/users', userRoutes);
+app.use('/api', postRoutes);
 
 
 
